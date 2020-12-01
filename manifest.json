@@ -1,6 +1,6 @@
 {
-  "domain": "ais_hello",
-  "name": "Przykład integracji sensora licznik",
+  "domain": "ais_nbp",
+  "name": "Aktualne ceny złota i walut z NBP",
   "documentation": "https://ai-speaker.com",
   "dependencies": [],
   "codeowners": [],

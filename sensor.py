@@ -1,10 +1,13 @@
-"""ais hello sensor"""
-from homeassistant.const import ENERGY_KILO_WATT_HOUR
+"""ais nbp sensor"""
 from homeassistant.helpers.entity import Entity
-from time import time
+from homeassistant.helpers import aiohttp_client
+import async_timeout
 import logging
+from datetime import timedelta
 
 _LOGGER = logging.getLogger(__name__)
+# Dostosowany do potrzeb i do bycia dobrym użytkownikiem API.
+SCAN_INTERVAL = timedelta(minutes=15)
 
 
 def setup_platform(hass, config, add_entities, discovery_info=None):
@@ -14,43 +17,92 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Konfiguracja za pomcą przepływu konfiguracji."""
-    _LOGGER.warning(str(config_entry.data))
-    liczniki = [1, 2, 3]
+    # Aktualnie obowiązująca cena złota
+    async_add_entities([AisNbpSensor(hass, "gold", "nbp_gold_price")])
+    # Aktualnie obowiązujący kurs średni walut
+    _LOGGER.info("Currencies to track: " + str(config_entry.data["currency"]))
+    currencies = config_entry.data["currency"]
+    for currency in currencies:
+        async_add_entities([AisNbpSensor(hass, currency, "nbp_currency_" + currency.lower())])
 
-    for x in liczniki:
-        async_add_entities([AisHelloSensor(x, "licznik" + str(x))])
+
+async def async_unload_entry(hass, entry):
+    """Sprzątanie przy usunięciu integracji - tu można dodać kod jeśli potrzeba robić coś więcej"""
+    pass
 
 
-class AisHelloSensor(Entity):
+class AisNbpSensor(Entity):
     """Reprezentacja sensora AisHelloSensor."""
 
-    def __init__(self, id, name):
+    def __init__(self, hass, currency, entity_id):
         """Inicjalizacja sensora."""
-        self._id = id
-        self._name = name
+        self.hass = hass
+        self._currency = currency
+        self._entity_id = entity_id
         self._state = None
+
+    @property
+    def entity_id(self):
+        """Funkcja zwracająca identyfikator sensora."""
+        return f"sensor.{self._entity_id}"
 
     @property
     def name(self):
         """Funkcja zwracająca nazwę sensora."""
-        return self._name
+        if self._currency.lower() == "gold":
+            return "Cena złota"
+        elif self._currency.lower() == "eur":
+            return "Kurs euro"
+        elif self._currency.lower() == "usd":
+            return "Kurs dolara"
+        elif self._currency.lower() == "chf":
+            return "Kurs franka"
+        elif self._currency.lower() == "gbp":
+            return "Kurs funta"
 
     @property
     def state(self):
-        """Funkcja zwracająca status sensora."""
+        """Funkcja zwracająca status sensora.
+           Wartość sensora powinna zawsze zwracać tylko informacje z pamięci: self._state
+        """
         return self._state
 
     @property
     def unit_of_measurement(self):
         """Funkcja zwracająca jednostkę miary sensora."""
-        return ENERGY_KILO_WATT_HOUR
+        if self._currency == "gold":
+            return "PLN/1g"
+        return self._currency
 
     @property
     def icon(self):
-        return "mdi:counter"
+        if self._currency == "gold":
+            return "mdi:gold"
+        return "mdi:cash-multiple"
 
-    def update(self):
+    async def async_ask_nbp(self):
+        web_session = aiohttp_client.async_get_clientsession(self.hass)
+        if self._currency == "gold":
+            url = "http://api.nbp.pl/api/cenyzlota?format=json"
+        else:
+            url = "http://api.nbp.pl/api/exchangerates/rates/a/" + self._currency.lower() + "?format=json"
+        try:
+            with async_timeout.timeout(2):
+                ws_resp = await web_session.get(url)
+                json_info = await ws_resp.json()
+                if self._currency == "gold":
+                    return json_info[0]["cena"]
+                else:
+                    return json_info["rates"][0]["mid"]
+        except Exception as e:
+            _LOGGER.error("Ask NBP error: " + str(e))
+
+    async def async_update(self):
         """Pobranie aktualnego statusu sensora
+           aktualizacja wartości powinna odbywać się okresowo, patrz SCAN_INTERVAL = timedelta(minutes=60)
+           pytanie serwisu powinno się odbywacć asynchronicznie
+           nie powinno się wykonywać częstych blokujących operacji I/O (we/wy) takich jak żądania sieciowe
         """
-        # epoch time in seconds
-        self._state = int(time()) * self._id
+        _LOGGER.debug("async_update nbp sensor: " + self._currency.lower())
+        self._state = await self.async_ask_nbp()
+
