@@ -1,6 +1,6 @@
 # ais_hello
 
-
+do zmiany
 Jest to minimalna implementacja integracji czujnika / licznika.
 
 ### Instalacja w Asystencie domowym

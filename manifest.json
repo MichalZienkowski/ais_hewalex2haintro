@@ -1,6 +1,6 @@
 {
-  "domain": "ais_nbp",
-  "name": "Aktualne ceny złota i walut z NBP",
+  "domain": "ais_h2h",
+  "name": "hewalex 2 ha",
   "documentation": "https://ai-speaker.com",
   "dependencies": [],
   "codeowners": [],

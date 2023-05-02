@@ -1,4 +1,4 @@
-"""AIS NBP."""
+"""AIS h2h."""
 import logging
 
 _LOGGER = logging.getLogger(__name__)
