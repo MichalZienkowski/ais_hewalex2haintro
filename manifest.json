@@ -1,8 +1,9 @@
 {
-  "domain": "ais_h2h",
+  "domain": "ais_hewalex2haintro",
   "name": "hewalex 2 ha",
   "documentation": "https://ai-speaker.com",
   "dependencies": [],
+  "version": "1.0.0",
   "codeowners": [],
   "requirements": [],
   "config_flow": true
