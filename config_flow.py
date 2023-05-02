@@ -6,7 +6,7 @@ import homeassistant.helpers.config_validation as cv
 _LOGGER = logging.getLogger(__name__)
 
 
-class AisNbpConfigFlow(config_entries.ConfigFlow, domain="ais_h2h"):
+class AisNbpConfigFlow(config_entries.ConfigFlow, domain="ais_hewalex2haintro"):
     """przepływu konfiguracji w integracji."""
 
     async def async_step_user(self, user_input=None):
