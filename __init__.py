@@ -2,7 +2,7 @@
 import logging
 
 _LOGGER = logging.getLogger(__name__)
-DOMAIN = "ais_h2h"
+DOMAIN = "ais_hewalex2haintro"
 
 
 async def async_setup(hass, config):
